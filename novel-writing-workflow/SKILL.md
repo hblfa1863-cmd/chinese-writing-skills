@@ -70,28 +70,64 @@ chinese-writing-skills          novel-writing-workflow          chinese-novelist
 3. 每个弧定义：起点 → 终点 → 核心冲突 → 关键转折点
 4. 生成 `arc-plan.md`，用户确认
 
+#### 0.A2 从弧规划中提取故事线 + 分篇章
+
+在弧规划确认后、首卷初始化前，必须完成：
+
+1. **拆篇章**：从弧1（300-500章）拆出3-4个篇章（100-150章/篇章）
+   - 每个篇章有独立的主题、起点、终点
+   - 生成 `part-plan.md`（弧1所有篇章的规划）
+
+2. **识别故事线**：从弧规划的所有内容中提取叙事线
+   - 每条线有独立的目标→达成轨迹
+   - 识别规则：独立目标 + 跨越≥20章的轨迹 = 一条故事线
+   - 为每条线创建 `storylines/{线名}.md` 初始文件
+   - 初始文件包含：触发章、第一段的规划、情绪弧预设
+
+3. **生成故事线总览**：`storylines-overview.md`
+   - 所有线的ID、优先级、类型、预期章范围
+
 #### 0.B 首卷初始化
 
 1. 选择弧1的前 50 章作为第一卷
 2. 生成详细卷规划 `volume-plans/vol-01-XXX.md`
-3. 初始化全部项目文件：
+3. 初始化全部项目文件（v3 全量）：
+   - `arc-plan.md` — 弧级规划（已生成）
+   - `arc-summaries/` — 弧完成时填充
+   - `part-plan.md` — 篇章规划（从弧1拆3-4个篇章）⭐v3
+   - `part-summaries/` — 篇章完成时填充 ⭐v3
+   - `volume-plans/` — 卷规划目录
+   - `volume-summaries/` — 卷总结目录
+   - `storylines/` — 每条叙事线一个文件 ⭐v3
+   - `storylines-overview.md` — 所有故事线总览表 ⭐v3
+   - `part-chapter-map.json` — 篇章-章节映射+呼应表 ⭐v3
+   - `chapters/` — 按卷分子目录
    - `characters/` — 每个活跃角色一个状态机文件
-   - `relation-matrix.md` — 人物关系矩阵 ⭐新增
+   - `relation-matrix.md` — 人物关系矩阵
    - `foreshadowing.json` — 伏笔追踪
    - `world-state.md` — 世界状态快照
-   - `style-baseline.json` — 风格基线（写完30章后校准）⭐新增
-   - `creative-notes.md` — 创作决策笔记 ⭐新增
-   - `chapter-index.json` — 章节结构化索引 ⭐新增
-   - `notable-lines.json` — 金句与名场景索引 ⭐新增
-   - `session-log.jsonl` — 写作会话日志 ⭐新增
+   - `style-baseline.json` — 风格基线（写完30章后校准）
+   - `creative-notes.md` — 创作决策笔记
+   - `chapter-index.json` — 章节结构化索引
+   - `notable-lines.json` — 金句与名场景索引
+   - `session-log.jsonl` — 写作会话日志
+   - `quality-reports/` — 卷级+篇章级+弧级审查报告
+   - `global-preference.md` — 全局基调偏好
+   - `writing-plan.json` — 当前卷的调度状态
 4. **写完第1章后暂停，让用户确认基调**
 
 ### 续写预热协议（每次恢复创作时强制执行）
 
-无论是中断恢复、跨会话继续、还是新卷开始，**必须先执行预热 SOP**：
+无论是中断恢复、跨会话继续、还是新卷开始，**必须先执行预热 SOP**。
+
+**⚠️ 预热前置步骤：先确认进度**
+在读取任何文件之前，先检查 `writing-plan.json` 或 `session-log.jsonl` 最新记录，
+确认下一次创作的章号、卷号、篇章。如果是从卷末尾恢复，确认是新卷的规划还是
+继续检查。**不要在没有确认章号的情况下加载预热文件。**
 
 ```
-续写预热 10 步：
+续写预热 14 步：
+ 0. 确认下一章号 → 读 writing-plan.json 或 session-log.jsonl
 1. 读 arc-plan.md → 了解最终目标
 2. 读 arc-summaries/当前弧 → 本弧目标
 3. 读 volume-summaries/上一卷 → 最近发生了什么
@@ -126,7 +162,9 @@ chinese-writing-skills          novel-writing-workflow          chinese-novelist
 
 ---
 
-### 第 2 步：规划阶段 — 技法注入
+### 第 2 步：规划阶段 — 模式分支
+
+#### 短中篇/长篇模式（≤299章）
 
 在 novelist 生成大纲和人物档案后，进入规划确认前，**自动挂载**对应的技法模块进行深度注入。
 
@@ -204,6 +242,25 @@ chinese-writing-skills          novel-writing-workflow          chinese-novelist
 ```
 
 ---
+
+### 第 2.5 步：超长篇模式 — 创作前对齐检查
+
+> 替代短中篇模式的"技法注入+规划检查"。超长篇不需要重新检查人物弧光/开头钩子。
+
+每章创作前执行以下轻量检查（替代第2步）：
+
+1. **读下一章大纲** → 从 volume plan 提取当前章的章节大纲
+2. **故事线对齐检查**：
+   - 本章大纲涉及的故事线是否与 storylines-overview.md 中的预期一致？
+   - 本章大纲列出的角色在 relation-matrix.md 中是否存在？
+   - 本章大纲描述的事件是否落在 part-plan.md 中对应篇章的主题范围内？
+3. **伏笔扫描**：读本章大纲，检查是否遗漏了 foreshadowing.json 中预期在本章回收的伏笔
+4. **读者情绪检查**：part-chapter-map.json 中本章的 reader_emotion_target 是否与大纲的情绪设计匹配？
+5. ⚠️ 如果对齐检查发现不一致 → 先调整大纲，再进入第3步创作
+
+---
+
+### 第 3 步：创作阶段 — 上下文装载协议 v2
 
 ### 第 3 步：创作阶段 — 上下文装载协议 v2
 
@@ -470,11 +527,55 @@ AI痕迹评分：87.2%（低风险）
 ```
 1. 生成完整卷总结（1000-2000字）→ volume-summaries/
 2. 更新所有活跃人物状态机 → characters/*-state.md
-3. 风格漂移检测 → 对比 style-baseline.json（avg_sentence_length/dialogue_ratio/comma_density）
+3. 风格漂移检测 → 对比 style-baseline.json
 4. 审计伏笔健康度 → 回收率 ≥ 40%
 5. 检查弧级规划对齐度
-6. 生成卷末审查报告 → quality-reports/
-7. 向用户展示摘要，确认后进入下一卷
+6. 🔴 跨文件一致性审计（v3新增 — 详见§跨文件一致性审计）
+7. 生成卷末审查报告 → quality-reports/
+8. 如果本卷跨了一个篇章边界 → 触发篇章完成仪式
+9. 向用户展示摘要，确认后进入下一卷
+```
+
+### 跨文件一致性审计（每卷强制执行）
+
+> **核心原则**：21个文件必须互相自洽。以下是必须检查的维度：
+
+```
+[卷末一致性审计清单]
+
+□ 人物状态 ↔ 关系矩阵：
+   - 对比 characters/*-state.md 中的"当前关系状态"字段
+     和 relation-matrix.md 中的对应行/列
+   - 如果 A-state.md 说"与B关系破裂"但矩阵说"A-B=信任"→ 修复
+
+□ 人物状态 ↔ 最近5章正文：
+   - 抽样最近5章，检查出场角色的行为是否与状态文件一致
+   - 如果状态文件说"张三失明"但最近章他没表现出失明 → 警告
+
+□ 故事线进度 ↔ 篇章规划：
+   - storylines-overview.md 中每条线的"当前段"
+     是否与 part-plan.md 中对应篇章的进度匹配
+   - 如果有线落后或超前 → 调整规划
+
+□ 伏笔文件 ↔ 章节索引：
+   - foreshadowing.json 中的 chapter_planted/chapter_revealed
+     是否与 chapter-index.json 中对应章的 key_events 一致
+   - 如果伏笔说在第50章埋入但章节索引说第50章没写这个事件 → 修复
+
+□ 世界状态 ↔ 最近5章正文：
+   - world-state.md 描述的状态是否与近期章节一致
+   - "帝国已覆灭"但最近章节写"帝国依然强盛" → 警告
+
+□ 风格基线 ↔ 本卷章节：
+   - style-baseline.json 的基线值 vs 本卷5个采样章的实际值
+   - 偏差超过阈值的项标记到审查报告
+
+□ 篇章-章节映射 ↔ 故事线总览：
+   - part-chapter-map.json 的 storylines_active 字段
+     是否与 storylines-overview.md 的活跃线一致
+
+审计输出：在 quality-reports/vol-XX-review.md 中增加「一致性审计」小节
+修复：产生不一致的条目自动标记为待修复，下一段创作前先修复
 ```
 
 ## 弧完成仪式（超长篇 ≥300章）
@@ -506,6 +607,58 @@ chinese-novelist/
     ├── TECHNIQUE-REVIEW.md          # 【新增】技法对照审查报告
     ├── AI-FINGERPRINT-REPORT.md     # 【新增】AI痕迹扫描汇总
     └── REVISION-LIST.md             # 【新增】修订建议清单
+```
+
+---
+
+## 章节修改协议（中途修改时使用）
+
+> 写作不是直线流程。用户可能要求修改已完成章节、删除角色、重写场景。
+> 以下协议确保修改不会破坏21个文件的一致性。
+
+### 轻量级修改（改一段对话/一处措辞）
+
+只改章节文件，**不更新其他文件**（除非修改了伏笔/关系/角色行为）
+
+### 中度修改（改一个场景/一次互动）
+
+```
+1. 修改章节文件（替换对应段落）
+2. 检查：修改是否涉及角色关系变化？
+   → 是 → 更新 relation-matrix.md
+3. 检查：修改是否涉及伏笔？
+   → 是 → 更新 foreshadowing.json
+4. 检查：修改是否改变了角色行为/状态？
+   → 是 → 更新 characters/{角色名}-state.md
+5. 追加修改日志到 session-log.jsonl
+```
+
+### 重度修改（删角色/重大剧情改动）
+
+```
+1. 确认波及范围：
+   - 该角色在哪些章出场？（查 chapter-index.json）
+   - 该角色涉及哪些故事线？（查 storylines-overview.md）
+   - 该角色在哪些伏笔中？（查 foreshadowing.json）
+2. 列出所有受影响文件
+3. 逐文件修改（从最近章往前改，保持时间线一致）
+4. 修改完成后执行「跨文件一致性审计」
+5. 向用户展示修改影响范围，确认不破坏其他线
+```
+
+---
+
+## 篇章完成仪式（超长篇 ≥300章）
+
+当一卷结束时检测到跨了篇章边界，在卷完成仪式中追加：
+
+```
+篇章完成后追加步骤：
+1. 生成篇章故事总结（5000-8000字）→ part-summaries/
+2. 逐条审计所有故事线在本篇章的进度
+3. 列出遗留问题（留给后续篇章）
+4. 比较实际进展 vs part-plan.md 的规划 → 如偏航则调整下一篇章
+5. 评估篇章节读者体验
 ```
 
 ---
