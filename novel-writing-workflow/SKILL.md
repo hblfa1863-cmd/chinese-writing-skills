@@ -97,11 +97,15 @@ chinese-writing-skills          novel-writing-workflow          chinese-novelist
 3. 读 volume-summaries/上一卷 → 最近发生了什么
 4. 读 volume-summaries/当前卷 → 现在在哪
 5. 读 creative-notes.md 最近20条 → 创作决策
-6. 读上章全文（5000字）→ 文字衔接感
-7. 读 relation-matrix.md → 人物关系直觉
-8. 读 world-state.md → 世界观状态
-9. 读 style-baseline.json → 风格锚点
-10. 向用户输出 500 字预热摘要，确认理解正确
+6. 读 storylines-overview.md → 所有活跃故事线状态 ⭐v3
+7. 读本章涉及的 storylines/{线名}.md → 故事线完整叙事路径 ⭐v3
+8. 读 part-chapter-map.json → 本章的呼应关系和读者情绪目标 ⭐v3
+9. 读上章全文（5000字）→ 文字衔接感
+10. 读 relation-matrix.md → 人物关系直觉
+11. 读 world-state.md → 世界观状态
+12. 读 style-baseline.json → 风格锚点
+13. 如果最近50章内跨了篇章边界 → 重读上一篇章的 part-summary ⭐v3
+14. 向用户输出 500 字预热摘要，确认理解正确
 ```
 
 预热摘要模板见 references/ultra-long-novel-design.md §3.2。
@@ -205,47 +209,54 @@ chinese-writing-skills          novel-writing-workflow          chinese-novelist
 
 进入 Phase 3 创作后，每章按以下协议执行。
 
-#### 超长篇（≥300章）上下文装载清单 v2
+#### 超长篇（≥300章）上下文装载清单 v3
 
-> **核心原则**：上下文保留上章全文（衔接感保障）+ 地图索引 + 新文档支持
+> **核心原则**：三层记忆（故事级+工程级+会话级），上章全文保留，详细信息按需检索
 
 **每章开始前装入上下文**：
 
-| # | 内容 | 来源文件 | tokens |
-|---|------|---------|:---:|
-| 1 | 上章衔接缓存（最后500字）| 上章文件末尾 | 1,000 |
-| 2 | 上章全文 | 上章完整文件 | 2,500 |
-| 3 | 上章摘要 | volume summary | 150 |
-| 4 | 当前章大纲 | volume plan | 200 |
-| 5 | 出场角色状态 | characters/*-state.md | 200/角色 |
-| 6 | 角色间关系状态 | relation-matrix.md ⭐ | 200 |
-| 7 | 可回收伏笔 | foreshadowing.json | 300 |
-| 8 | 世界状态段落 | world-state.md | 200 |
-| 9 | 当前卷总结 | volume-summaries/ | 500 |
-|10 | 当前弧总结 | arc-summaries/ | 500 |
-|11 | 总览摘要 | arc-plan.md | 300 |
-|12 | 风格锚点 | style-baseline.json ⭐ | 100 |
-|13 | 最近创作笔记(5条) | creative-notes.md ⭐ | 200 |
-| | | **总计** | **~7,000** |
+| # | 层级 | 内容 | 来源文件 | tokens |
+|---|:---:|------|---------|:---:|
+| 1 | 故事⭐ | 故事线总览 | storylines-overview.md | 200 |
+| 2 | 故事⭐ | 本章故事线详情(2-4条) | storylines/{线名}.md「当前段」 | 300/线 |
+| 3 | 故事⭐ | 篇章规划 | part-plan.md | 200 |
+| 4 | 故事⭐ | 篇章总结(上一篇章) | part-summaries/ | 500 |
+| 5 | 故事⭐ | 本章呼应表 | part-chapter-map.json | 100 |
+| 6 | 故事⭐ | 读者情绪目标 | part-chapter-map.json | 50 |
+| 7 | 工程 | 当前章大纲 | volume plan | 200 |
+| 8 | 工程 | 出场角色状态 | characters/*-state.md | 200/角色 |
+| 9 | 工程 | 角色间关系状态 | relation-matrix.md | 200 |
+| 10| 工程 | 可回收伏笔 | foreshadowing.json | 300 |
+| 11| 工程 | 世界状态段落 | world-state.md | 200 |
+| 12| 工程 | 当前卷总结 | volume-summaries/ | 500 |
+| 13| 工程 | 当前弧总结 | arc-summaries/ | 500 |
+| 14| 工程 | 总览摘要 | arc-plan.md | 300 |
+| 15| 工程 | 风格锚点 | style-baseline.json | 100 |
+| 16| 工程 | 最近创作笔记(5条) | creative-notes.md | 200 |
+| 17| 会话 | 上章衔接缓存(最后500字) | 上章文件末尾 | 1,000 |
+| 18| 会话 | 上章全文 | 上章完整文件 | 2,500 |
+| 19| 会话 | 上章摘要 | volume summary | 150 |
+| | | 当前章正文(创作产出) | — | 2,000 |
+| | | | **总计** | **~11,700** |
 
-**每章完成后更新文件**：
+**每章完成后更新文件（v3 新增 storylines/part 系列）**：
 
-| # | 操作 | 目标文件 |
-|---|------|---------|
-| 1 | 写入本章衔接缓存 | volume summary |
-| 2 | 追加本章摘要 | volume summary |
-| 3 | 保留上章全文（不移除！） | 上下文 |
-| 4 | 移除更早的章节正文 | 上下文 |
-| 5 | 更新角色状态 | characters/*-state.md |
-| 6 | 更新关系矩阵 | relation-matrix.md ⭐ |
-| 7 | 更新伏笔 | foreshadowing.json |
-| 8 | 追加创作决策 | creative-notes.md ⭐ |
-| 9 | 更新世界状态 | world-state.md |
-|10 | 追加章节索引 | chapter-index.json ⭐ |
-|11 | 追加金句/名场景 | notable-lines.json ⭐ |
-|12 | 追加会话日志 | session-log.jsonl ⭐ |
-
-#### 每章创作时的技法挂载（所有模式通用）
+| # | 层级 | 操作 | 目标文件 |
+|---|:---:|------|---------|
+| 1 | 故事⭐ | 更新故事线进展 | storylines/{线名}.md |
+| 2 | 故事⭐ | 更新篇章-章节映射 | part-chapter-map.json |
+| 3 | 工程 | 写入本章衔接缓存 | volume summary |
+| 4 | 工程 | 追加本章摘要 | volume summary |
+| 5 | 工程 | 更新角色状态 | characters/*-state.md |
+| 6 | 工程 | 更新关系矩阵 | relation-matrix.md |
+| 7 | 工程 | 更新伏笔 | foreshadowing.json |
+| 8 | 工程 | 追加创作决策 | creative-notes.md |
+| 9 | 工程 | 更新世界状态 | world-state.md |
+| 10| 工程 | 追加章节索引 | chapter-index.json |
+| 11| 工程 | 追加金句/名场景 | notable-lines.json |
+| 12| 工程 | 追加会话日志 | session-log.jsonl |
+| 13| 会话 | 保留上章全文（不移除！） | 上下文 |
+| 14| 会话 | 移除更早章节正文 | 上下文 |#### 每章创作时的技法挂载（所有模式通用）
 
 | chapterType | 自动加载的技法模块 | 用途 |
 |:-----------:|-------------------|------|
