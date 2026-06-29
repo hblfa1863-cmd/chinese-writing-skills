@@ -59,49 +59,52 @@ chinese-writing-skills          novel-writing-workflow          chinese-novelist
 
 ---
 
-### 第 0 步：模式分派（按章节规模自动选择）
+### 第 0 步（超长篇特有）：弧级规划 + 首卷初始化
 
-```
-用户说出需求后 → 确定总章数
-              │
-              ├─ ≤50章  → 标准模式（第1-5步）
-              │           一次性规划，上下文卸载，滚动规划可选
-              │
-              ├─ 51-299章 → 长篇模式
-              │             启用滚动规划（每10章刷新）+ 上下文卸载
-              │             可在卷结束时（每50章）暂停确认
-              │
-              └─ ≥300章 → 超长篇模式
-                          弧/卷/章三层规划 + 人物状态机 + 伏笔管理 + 卷仪式
-                          详见 references/ultra-long-novel-design.md
-```
-
-### 超长篇模式特殊流程（≥300章）
-
-当检测到用户在创作 ≥300 章的小说时，执行以下特殊流程：
+当检测到用户在创作 ≥300 章的小说时，详见 references/ultra-long-novel-design.md。
 
 #### 0.A 弧级规划
 
 1. 告知用户将使用超长篇模式
 2. 与用户共同定义 6-10 个弧（每个弧 300-500 章）
 3. 每个弧定义：起点 → 终点 → 核心冲突 → 关键转折点
-4. 生成 `arc-plan.md`
-5. 用户确认
+4. 生成 `arc-plan.md`，用户确认
 
-#### 0.B 首卷规划
+#### 0.B 首卷初始化
 
 1. 选择弧1的前 50 章作为第一卷
 2. 生成详细卷规划 `volume-plans/vol-01-XXX.md`
-3. 初始化 `characters/` 目录的人物状态机文件
-4. 初始化 `foreshadowing.json`
-5. 初始化 `world-state.md`
-6. 用户确认卷规划
+3. 初始化全部项目文件：
+   - `characters/` — 每个活跃角色一个状态机文件
+   - `relation-matrix.md` — 人物关系矩阵 ⭐新增
+   - `foreshadowing.json` — 伏笔追踪
+   - `world-state.md` — 世界状态快照
+   - `style-baseline.json` — 风格基线（写完30章后校准）⭐新增
+   - `creative-notes.md` — 创作决策笔记 ⭐新增
+   - `chapter-index.json` — 章节结构化索引 ⭐新增
+   - `notable-lines.json` — 金句与名场景索引 ⭐新增
+   - `session-log.jsonl` — 写作会话日志 ⭐新增
+4. **写完第1章后暂停，让用户确认基调**
 
-#### 0.C 进入创作（见第3步"超长篇上下文装载"）
+### 续写预热协议（每次恢复创作时强制执行）
 
-其他流程与长中篇相同，但每章创作时的上下文装载方式不同（见下文）。
+无论是中断恢复、跨会话继续、还是新卷开始，**必须先执行预热 SOP**：
 
----
+```
+续写预热 10 步：
+1. 读 arc-plan.md → 了解最终目标
+2. 读 arc-summaries/当前弧 → 本弧目标
+3. 读 volume-summaries/上一卷 → 最近发生了什么
+4. 读 volume-summaries/当前卷 → 现在在哪
+5. 读 creative-notes.md 最近20条 → 创作决策
+6. 读上章全文（5000字）→ 文字衔接感
+7. 读 relation-matrix.md → 人物关系直觉
+8. 读 world-state.md → 世界观状态
+9. 读 style-baseline.json → 风格锚点
+10. 向用户输出 500 字预热摘要，确认理解正确
+```
+
+预热摘要模板见 references/ultra-long-novel-design.md §3.2。
 
 ### 第 1 步：启动引擎
 
@@ -198,46 +201,49 @@ chinese-writing-skills          novel-writing-workflow          chinese-novelist
 
 ---
 
-### 第 3 步：创作阶段 — 实时技法参考
+### 第 3 步：创作阶段 — 上下文装载协议 v2
 
-进入 Phase 3 创作后，每章创作时**自动加载对应技法模块作为 Prompt 上下文**。
+进入 Phase 3 创作后，每章按以下协议执行。
 
-#### 超长篇模式（≥300章）的特殊上下文装载协议
+#### 超长篇（≥300章）上下文装载清单 v2
 
-> **核心原则**：不在上下文里堆累积物。上下文只放"地图"，详细信息去文件系统检索。
+> **核心原则**：上下文保留上章全文（衔接感保障）+ 地图索引 + 新文档支持
 
-**每章开始前，从文件系统检索并装入上下文**：
+**每章开始前装入上下文**：
 
-```
-[上下文装载清单 — 每章创作前执行]
+| # | 内容 | 来源文件 | tokens |
+|---|------|---------|:---:|
+| 1 | 上章衔接缓存（最后500字）| 上章文件末尾 | 1,000 |
+| 2 | 上章全文 | 上章完整文件 | 2,500 |
+| 3 | 上章摘要 | volume summary | 150 |
+| 4 | 当前章大纲 | volume plan | 200 |
+| 5 | 出场角色状态 | characters/*-state.md | 200/角色 |
+| 6 | 角色间关系状态 | relation-matrix.md ⭐ | 200 |
+| 7 | 可回收伏笔 | foreshadowing.json | 300 |
+| 8 | 世界状态段落 | world-state.md | 200 |
+| 9 | 当前卷总结 | volume-summaries/ | 500 |
+|10 | 当前弧总结 | arc-summaries/ | 500 |
+|11 | 总览摘要 | arc-plan.md | 300 |
+|12 | 风格锚点 | style-baseline.json ⭐ | 100 |
+|13 | 最近创作笔记(5条) | creative-notes.md ⭐ | 200 |
+| | | **总计** | **~7,000** |
 
-1. 当前章大纲 → 从 volume plan 提取 (200 tokens)
-2. 上章完整摘要 → 从上一章的收尾步骤写入 (300 tokens)
-3. 本章出场角色状态 → 读 characters/{角色名}-state.md，仅提取相关字段 (200 tokens/角色)
-4. 本章可回收的活跃伏笔 → 读 foreshadowing.json，筛选 (300 tokens)
-5. 世界状态关联段落 → 读 world-state.md，提取与本章场景相关的段落 (200 tokens)
-6. 当前卷总结 → 读 volume-summaries/vol-XX-summary.md (1000 tokens)
-7. 当前弧总结 → 读 arc-summaries/arc-XX-summary.md (1000 tokens)
-8. 总览摘要 → 读 arc-plan.md 的终极目标+当前进度段 (300 tokens)
+**每章完成后更新文件**：
 
-总计装入: ~3,500-4,000 tokens（占上下文的 2%）
-```
-
-**每章完成后，更新文件系统**：
-
-```
-[上下文卸载 + 文件更新 — 每章创作后执行]
-
-1. 本章摘要 → 追加到 volume summary
-2. 人物状态变更 → 更新 characters/{角色名}-state.md
-3. 新埋伏笔 → 注册到 foreshadowing.json
-4. 回收伏笔 → 标记 revealed_chapter，移入 revealed 数组
-5. 世界状态变更 → 更新 world-state.md
-6. 清除本章正文 ← 从上下文删除
-7. 保留状态索引在上下文：上章摘要 + 卷/弧总结 + 当前章大纲
-```
-
----
+| # | 操作 | 目标文件 |
+|---|------|---------|
+| 1 | 写入本章衔接缓存 | volume summary |
+| 2 | 追加本章摘要 | volume summary |
+| 3 | 保留上章全文（不移除！） | 上下文 |
+| 4 | 移除更早的章节正文 | 上下文 |
+| 5 | 更新角色状态 | characters/*-state.md |
+| 6 | 更新关系矩阵 | relation-matrix.md ⭐ |
+| 7 | 更新伏笔 | foreshadowing.json |
+| 8 | 追加创作决策 | creative-notes.md ⭐ |
+| 9 | 更新世界状态 | world-state.md |
+|10 | 追加章节索引 | chapter-index.json ⭐ |
+|11 | 追加金句/名场景 | notable-lines.json ⭐ |
+|12 | 追加会话日志 | session-log.jsonl ⭐ |
 
 #### 每章创作时的技法挂载（所有模式通用）
 
@@ -446,32 +452,31 @@ AI痕迹评分：87.2%（低风险）
 
 ---
 
-## 卷完成仪式（超长篇模式 ≥300章）
+## 卷完成仪式（超长篇 ≥300章）
 
-每完成 50 章（一卷），强制执行卷完成仪式：
-
-```
-1. 生成本卷总结（1000-2000字）→ 写入 volume-summaries/vol-XX-summary.md
-2. 更新所有活跃人物状态文件 → characters/*-state.md
-3. 审计伏笔健康度 → 回收率 ≥ 40%
-4. 检查弧级规划对齐度 → 是否偏离主线
-5. 生成卷末审查报告 → quality-reports/vol-XX-review.md
-6. 向用户展示摘要，确认后进入下一卷
-```
-
-## 弧完成仪式（超长篇模式 ≥300章）
-
-每完成一个弧（300-500章），强制执行弧完成仪式：
+每完成 50 章（一卷），强制执行：
 
 ```
-1. 生成本弧完成总结（3000-5000字）→ arc-summaries/arc-XX-summary.md
+1. 生成完整卷总结（1000-2000字）→ volume-summaries/
+2. 更新所有活跃人物状态机 → characters/*-state.md
+3. 风格漂移检测 → 对比 style-baseline.json（avg_sentence_length/dialogue_ratio/comma_density）
+4. 审计伏笔健康度 → 回收率 ≥ 40%
+5. 检查弧级规划对齐度
+6. 生成卷末审查报告 → quality-reports/
+7. 向用户展示摘要，确认后进入下一卷
+```
+
+## 弧完成仪式（超长篇 ≥300章）
+
+每完成一个弧（300-500章），强制执行：
+
+```
+1. 生成弧完成总结（3000-5000字）→ arc-summaries/
 2. 审计全部伏笔回收率 → 目标 ≥ 70%
 3. 深度审查人物弧光完成度
-4. 生成读者体验曲线分析
+4. 生成本弧风格漂移趋势报告
 5. 向用户展示完整弧报告，确认后进入下一弧
 ```
-
----
 
 ## 项目结构
 
