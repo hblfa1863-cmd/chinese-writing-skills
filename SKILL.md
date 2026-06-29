@@ -24,6 +24,24 @@ description: |
 - **作为创作参考**：写作时对照检查
 - **持续扩展**：随时补充新的技法和巧思
 
+## 整合工作流
+
+本知识库可与 [chinese-novelist](https://github.com/PenglongHuang/chinese-novelist-skill) 搭配使用，通过 `novel-writing-workflow` 编排层实现：
+
+```
+chinese-writing-skills (技法) + chinese-novelist (引擎)
+              ↓
+   novel-writing-workflow (编排层)
+              ↓
+      端到端小说创作系统
+```
+
+编排层已包含在本仓库 → [novel-writing-workflow/](novel-writing-workflow/)
+
+详见 [novel-writing-workflow/SKILL.md](novel-writing-workflow/SKILL.md)
+
+---
+
 ## 模块索引
 
 | 编号 | 模块 | 文件 | 内容概要 |
